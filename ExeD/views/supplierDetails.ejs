@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Supplier Details</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body style="background-color: #f8f9fa; padding: 20px;">
+
+  <div class="container" style="max-width: 600px;">
+    <h2 class="text-center" style="color: #007bff;">Supplier Details</h2>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        <h4 class="card-title" style="color: #007bff;"><%= supplier.company_name %></h4>
+        <p><strong>Representative:</strong> <%= supplier.representative_name %></p>
+        <p><strong>Phone Number:</strong> <%= supplier.phone_number %></p>
+        <p><strong>Username:</strong> <%= supplier.username %></p>
+      </div>
+    </div>
+
+    <h4 class="mb-3" style="color: #007bff;">Products Offered</h4>
+
+    <% if (products.length > 0) { %>
+      <form id="orderForm">
+        <table class="table table-bordered">
+          <thead style="background-color: #007bff; color: white;">
+            <tr>
+              <th>Product Name</th>
+              <th>Price per Unit</th>
+              <th>Minimum Quantity</th>
+              <th>Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% products.forEach((product, index) => { %>
+              <tr>
+                <td><%= product.product_name %></td>
+                <td>₪<%= product.unit_price %></td> 
+                <td><%= product.min_quantity %></td>
+                <td>
+                  <input type="number" name="quantity" class="form-control" 
+                         data-product-id="<%= product.product_id %>"
+                         data-min-quantity="<%= product.min_quantity %>"
+                         min="0" placeholder="Enter quantity">
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-primary w-100">Order Selected Products</button>
+      </form>
+    <% } else { %>
+      <div class="alert alert-warning text-center">No products available for this supplier.</div>
+    <% } %>
+
+    <a href="/supplier/grocer/allOrders" class="btn btn-secondary w-100 mt-3">Back to Orders</a>
+  </div>
+
+  <script>
+    const supplierId = "<%= supplier.id %>";
+
+    document.getElementById("orderForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const inputs = document.querySelectorAll('input[name="quantity"]');
+      const products = [];
+
+      inputs.forEach(input => {
+        const quantity = parseInt(input.value);
+        const productId = input.getAttribute("data-product-id");
+        const min_quantity = parseInt(input.getAttribute("data-min-quantity"));
+
+        if (!isNaN(quantity) && quantity > 0) {
+          products.push({ productId, quantity, min_quantity });
+        }
+      });
+
+      if (products.length === 0) {
+        alert("Please select at least one product with quantity > 0.");
+        return;
+      }
+
+      const response = await fetch(`/supplier/orders/create/${supplierId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ products })
+      });
+
+      if (response.ok) {
+        window.location.href = "/supplier/grocer/allOrders";
+      } else {
+        alert("The quantity of the products is less than the minimum.");
+      }
+    });
+  </script>
+</body>
+</html>
